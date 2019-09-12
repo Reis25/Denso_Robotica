@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Inicializamos a toolbox para iniciar o projeto</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[startup_rvc;]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Conectamos os nós remotos do ROS e inicializamos o ambiente</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[setenv('ROS_MASTER_URI','http://10.0.0.103:11311')
+setenv('ROS_IP','10.0.0.103')
+
+rosinit;]]></w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Recebemos as posições do cubo pelo ROS e colocamos na varíável my_sub</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[sub = rossubscriber('/denso_cube_tf');
+my_sub= receive(sub, 10);]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Criação dos link para o braço de 6 juntas. Utilizamos a função Revolute para criar 6 juntas rotacionais para nosso robô.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[%% Criação dos Links para o braço de 6-juntas
+L(1) = Revolute('a', 0, 'alpha', pi/2, 'd', 0.125, 'qlim', [-2.79, 2.79]);
+L(2) = Revolute('a', 0.21, 'alpha', 0, 'd', 0, 'offset', pi/2, 'qlim', [-2.09, 2.09]);
+L(3) = Revolute('a', -0.075, 'alpha', -pi/2, 'd', 0, 'offset', -pi/2, 'qlim', [0.33, 2.79]);
+L(4) = Revolute('a', 0, 'alpha', pi/2, 'd', 0.21, 'qlim', [-2.79, 2.79]);
+L(5) = Revolute('a', 0, 'alpha', -pi/2, 'd', 0, 'qlim', [-2.09, 2.09]);
+L(6) = Revolute('a', 0, 'alpha', 0, 'd', 0.07, 'qlim', [-6.28, 6.28]);]]></w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Criamos um objeto SerialLink com os links gerados anteriormente e setamos ums posição inicial para o denso no espaço de juntas.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[robot = SerialLink(L, 'name', 'Denso');
+q = [0 0 -pi/2 0 0 0];
+robot.plot(q)]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Em seguida calculamos as cinemáticas direta e inversa para a configuração incial para verificar se os valores congruem. </w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[Kd = robot.fkine(q)
+
+Ki = robot.ikunc(Kd)]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Como medida de segurança calculamos pontos para a trajetória para que o braço não bata no cubo, o prosicionando inicialmente acima do cubo. Para fins de simulação os valores para t1, t2 e t3 podem ser encontrados utilizando a função teach e depois setados nos valores de x, y, z e na matriz de rotação.</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[%robot.teach()
+x1 = my_sub.Transforms.Transform.Translation.X + 0.1;
+y1 = my_sub.Transforms.Transform.Translation.Y + 0.02;
+z1 = my_sub.Transforms.Transform.Translation.Z - 0.025 + 0.25 - 0.115;
+t1 = transl(x1, y1, z1+0.15);
+t1(1:3,1:3) = [-1 0 0;0 1 0;0 0 -1];
+%Ponto no meio do cubo
+x2 = my_sub.Transforms.Transform.Translation.X + 0.1;
+y2 = my_sub.Transforms.Transform.Translation.Y + 0.02;
+z2 = my_sub.Transforms.Transform.Translation.Z - 0.025 + 0.19 - 0.115;
+t2 = transl(x2, y2, z2+0.15);
+t2(1:3,1:3) = [-1 0 0;0 1 0;0 0 -1];
+%Ponto goal
+x3 = 0.2;
+y3 = 0.155;
+z3 = -0.088;
+t3 = transl(x3,y3,z3+0.15);
+t3(1:3,1:3) = [-1 0 0;0 1 0;0 0 -1];
+%Cinematica inversa
+Ki1 = robot.ikunc(t1);
+Ki2 = robot.ikunc(t2);
+Ki3 = robot.ikunc(t3);]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Exemplo para simulação:</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[%robot.teach()
+%Ponto acima do cubo
+x1 = 0.398 + 0.1;
+y1 = 0.02;
+z1 = 0.05 - 0.025 + 0.25 - 0.115; 
+t1 = transl(x1, y1, z1+0.15);
+t1(1:3,1:3) = [-1 0 0;0 1 0;0 0 -1];
+t1
+
+%Ponto no meio do cubo
+x2 = 0.398 + 0.1;
+y2 = 0.02;
+z2 = 0.05 - 0.025 - 0.115;
+t2 = transl(x2, y2, z2+0.15);
+t2(1:3,1:3) = [-1 0 0;0 1 0;0 0 -1];
+t2
+
+%Ponto final
+x3 = 0.326;
+y3 = -0.230;
+z3 = -0.088;
+t3 = transl(x3,y3,z3+0.15);
+t3(1:3,1:3) = [-1 0 0;0 1 0;0 0 -1];
+t3]]></w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Em seguida calculamos as cinemáticas inversas dos pontos para ter os espaços de juntas</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[%Cinematica inversa
+Ki1 = robot.ikunc(t1)
+Ki2 = robot.ikunc(t2)
+Ki3 = robot.ikunc(t3)]]></w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Aqui plotamos os pontos de cada trajetória com as posições do braço</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[robot.plot(q);
+robot.plot(Ki1);
+robot.plot(Ki2);
+robot.plot(Ki3);]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Agora vamos calcular as trajetórias para pegar o cubo e colocar em outra localidade, essas trajetórias serão enviadas para o denso como angulos por cinemática inversa</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[t = 50;
+traj = jtraj(q, Ki1, t)
+traj2 = jtraj(Ki1, Ki2, t)
+traj3 = jtraj(Ki2, q, t)
+traj4 = jtraj(q, Ki3, t)
+traj5 = jtraj(Ki3, q, t)
+trajF = [traj;traj2;traj3;traj4;traj5];]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>E plotamos o robô atuando nestas trajetórias(Rodar no scrpt ou livescript do matlab melhora a visualização):</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[%Trajetória inicial=>acima do cubo
+for i = 1:1:t
+    [traj(i,1) traj(i,2) traj(i,3) traj(i,4) traj(i,5) traj(i,6)];
+    robot.plot([traj(i,1) traj(i,2) traj(i,3) traj(i,4) traj(i,5) traj(i,6)])
+    pause(0.01);
+end]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[%Trajetória acima do cubo=>pegar cubo
+for i = 1:1:t
+    [traj2(i,1) traj2(i,2) traj2(i,3) traj2(i,4) traj2(i,5) traj2(i,6)];
+    robot.plot([traj2(i,1) traj2(i,2) traj2(i,3) traj2(i,4) traj2(i,5) traj2(i,6)])
+    pause(0.01);
+end]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[%Trajetória pegar cubo=>inicial(com cubo)
+for i = 1:1:t
+    [traj3(i,1) traj3(i,2) traj3(i,3) traj3(i,4) traj3(i,5) traj3(i,6)];
+    robot.plot([traj3(i,1) traj3(i,2) traj3(i,3) traj3(i,4) traj3(i,5) traj3(i,6)])
+    pause(0.01);
+end]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[%Trajetória inicial(com cubo)=>objetivo(solta cubo)
+for i = 1:1:t
+    [traj4(i,1) traj4(i,2) traj4(i,3) traj4(i,4) traj4(i,5) traj4(i,6)];
+    robot.plot([traj4(i,1) traj4(i,2) traj4(i,3) traj4(i,4) traj4(i,5) traj4(i,6)])
+    pause(0.01);
+end]]></w:t></w:r></w:p><w:p><w:pPr><w:sectPr/></w:pPr></w:p><w:p><w:pPr><w:pStyle w:val="text"/><w:jc w:val="left"/></w:pPr><w:r><w:t>Aqui vamos enviar os parâmetros para o robô através de variáveis que vão para o simulink</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="code"/></w:pPr><w:r><w:t><![CDATA[for i = 1:1:t*5
+    stheta1 = num2str(trajF(i,1));
+    stheta2 = num2str(trajF(i,2));
+    stheta3 = num2str(trajF(i,3));
+    stheta4 = num2str(trajF(i,4));
+    stheta5 = num2str(trajF(i,5));
+    stheta6 = num2str(trajF(i,6));
+    pause(0.1)
+    set_param('projetoRobotica/theta1','Value',stheta1);
+    set_param('projetoRobotica/theta2','Value',stheta2);
+    set_param('projetoRobotica/theta3','Value',stheta3);
+    set_param('projetoRobotica/theta4','Value',stheta4);
+    set_param('projetoRobotica/theta5','Value',stheta5);
+    set_param('projetoRobotica/theta6','Value',stheta6);
+    % Ao chegar no cubo passamos este valor para a garra fechar
+    if i == t*2
+        set_param('projetoRobotica/gripper','Value','0.43');
+        pause(3)
+    end
+    % Ao chegar no objetivo passamos este valor para a garra abrir
+    if i == t*4
+        set_param('projetoRobotica/gripper','Value','0');
+        pause(3)
+    end
+    
+end]]></w:t></w:r></w:p></w:body></w:document>
