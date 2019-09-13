@@ -6,6 +6,7 @@ O sistema de localização constitui-se de uma câmera instalada em frente ao ma
 **Funçes**
 
 Os arquivos do projeto estão dentro da pasta rvctools. Os arquivos ArmTraj são livescripts para rodar no Matlab2017 ou mais nova, eles demontram todo o projeto em scripts. Dentro de rvctools o arquivo para o projeto é o test.m
+O arquivo com o relatório é o Full_Rob.
 
 Importante: Configurar o ROS como está descrito no doc. Caso só deseje simular com plots, comentar a parte de recebimento dos parâmetros pelo subscriber do ROS e anotar as variáveis utilizando a função teach() da toolbox.
 
@@ -43,6 +44,4 @@ http://wiki.ros.org/joint_trajectory_controller
 Tópicos no ROS
 http://wiki.ros.org/joint_state_publisher
 
-Os arquivos do projeto estão dentro da pasta rvctools. Os arquivos ArmTraj são livescripts para rodar no Matlab2017 ou mais nova, eles demontram todo o projeto em scripts. Dentro de rvctools o arquivo para o projeto é o test.m
 
-Importante: Configurar o ROS como está descrito no doc. Caso só deseje simular com plots, comentar a parte de recebimento dos parâmetros pelo subscriber do ROS e anotar as variáveis utilizando a função teach() da toolbox.
